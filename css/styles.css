@@ -131,6 +131,10 @@ main {
 .welcome-actions { display: flex; gap: 14px; justify-content: center; margin: 26px 0 10px; flex-wrap: wrap; }
 
 /* ---------- forms ---------- */
+.inprogress-note {
+  background: #fff7e6; border: 1px solid #f0dcae; border-left: 4px solid var(--warn);
+  border-radius: 8px; padding: 10px 14px; font-size: .88rem; color: #6b4e16; margin: 0 0 16px;
+}
 .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 .field { display: flex; flex-direction: column; gap: 6px; }
 .field.span2 { grid-column: 1 / -1; }

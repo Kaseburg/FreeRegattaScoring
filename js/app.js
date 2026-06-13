@@ -47,6 +47,11 @@
 
   // ---------- navigation ----------
   function showView(view) {
+    // Leaving Quick Entry: drop a started-but-empty race so it doesn't linger.
+    if (currentView === 'quick' && view !== 'quick' && currentRaceId) {
+      pruneEmptyRace(currentRaceId);
+      persist();
+    }
     currentView = view;
     $$('.view').forEach(function (v) { v.hidden = true; });
     const node = $('#view-' + view);
@@ -82,6 +87,11 @@
   // SETUP VIEW
   // =====================================================================
   function renderSetup() {
+    // Reflect whether this is initial setup or editing an in-progress regatta.
+    const inProgress = (regatta.races && regatta.races.length > 0) || (regatta.boats && regatta.boats.length > 0);
+    $('#setupHeading').textContent = inProgress ? 'Regatta Settings' : 'Regatta Setup';
+    $('#setupInProgress').hidden = !inProgress;
+
     $('#f-name').value = regatta.name || '';
     $('#f-organizer').value = regatta.organizer || '';
     $('#f-venue').value = regatta.venue || '';
@@ -748,6 +758,7 @@
     $('#btnQuickNextRace').addEventListener('click', quickNextRace);
     $('#btnQuickScore').addEventListener('click', quickScoreAndFinish);
     $('#btnQuitQuick').addEventListener('click', quitQuick);
+    $('#btnQuickSettings').addEventListener('click', function () { showView('setup'); });
   }
 
   // =====================================================================
@@ -1019,6 +1030,7 @@
       startNewRegatta();
     });
 
+    $('#btnResultsSettings').addEventListener('click', function () { showView('setup'); });
     $('#btnCSV').addEventListener('click', downloadCSV);
     $('#btnPrint').addEventListener('click', function () { window.print(); });
   }

@@ -43,6 +43,10 @@ custom discard schedule; manage the boat list; and use the detailed race screen
 
 - **Easy / Quick Entry** — score a whole regatta by typing sail numbers in
   finishing order; auto-creates boats; auto-applies pickup-regatta defaults.
+- **Editable anytime** — once a regatta is in progress you can change its
+  settings (name, fleets, number of throwouts, etc.) from the **Settings** tab
+  or the ⚙ Settings button on the Quick Entry and Results pages; changes
+  re-score the standings immediately.
 - **Regatta setup** — name, organizing authority, venue, dates.
 - **Fleets / divisions** — optional; score one-design classes separately or all
   together.

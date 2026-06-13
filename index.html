@@ -18,7 +18,7 @@
       </div>
     </div>
     <nav class="top-nav" id="topNav" hidden>
-      <button class="nav-btn" data-view="setup">Setup</button>
+      <button class="nav-btn" data-view="setup">Settings</button>
       <button class="nav-btn" data-view="boats">Boats</button>
       <button class="nav-btn" data-view="races">Races</button>
       <button class="nav-btn" data-view="results">Results</button>
@@ -57,7 +57,13 @@
     <!-- ============ SETUP ============ -->
     <section class="view" id="view-setup" hidden>
       <div class="card">
-        <h2>Regatta Setup</h2>
+        <div class="card-head">
+          <h2 id="setupHeading">Regatta Setup</h2>
+        </div>
+        <p class="inprogress-note" id="setupInProgress" hidden>
+          This regatta is in progress. Changes here — including the number of throwouts —
+          apply <strong>immediately</strong> to the standings on the Results page.
+        </p>
         <form id="setupForm" class="form-grid">
           <label class="field span2">
             <span>Regatta name <em class="req">*</em></span>
@@ -231,6 +237,7 @@
               <span>Fleet</span>
               <select id="quickFleet" class="w-fleet" title="Fleet for this race"></select>
             </label>
+            <button class="btn ghost small" id="btnQuickSettings" title="Edit regatta settings">⚙ Settings</button>
           </div>
         </div>
 
@@ -278,6 +285,7 @@
           </div>
           <div class="results-actions">
             <select id="resultsFleetSelect" class="w-fleet"></select>
+            <button class="btn ghost small" id="btnResultsSettings" title="Edit regatta settings">⚙ Settings</button>
             <button class="btn ghost small" id="btnCSV">Download CSV</button>
             <button class="btn ghost small" id="btnPrint">Print</button>
           </div>
