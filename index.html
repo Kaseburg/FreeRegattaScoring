@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Free Regatta Scoring — RRS 2025-2028</title>
+  <meta name="description" content="Create and score sailing regattas using the US Sailing Racing Rules of Sailing (RRS 2025-2028) Low Point System." />
+  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%E2%9B%B5%3C/text%3E%3C/svg%3E" />
+</head>
+<body>
+  <header class="app-header">
+    <div class="brand">
+      <span class="brand-mark">⛵</span>
+      <div>
+        <h1>Free Regatta Scoring</h1>
+        <p class="tagline">US Sailing — Racing Rules of Sailing 2025–2028 · Low Point System</p>
+      </div>
+    </div>
+    <nav class="top-nav" id="topNav" hidden>
+      <button class="nav-btn" data-view="setup">Setup</button>
+      <button class="nav-btn" data-view="boats">Boats</button>
+      <button class="nav-btn" data-view="races">Races</button>
+      <button class="nav-btn" data-view="results">Results</button>
+    </nav>
+    <div class="header-actions">
+      <button class="btn ghost" id="btnExport" title="Download a backup file">Export</button>
+      <button class="btn ghost" id="btnImport" title="Load a backup file">Import</button>
+      <input type="file" id="importFile" accept="application/json" hidden />
+      <button class="btn ghost danger" id="btnNew" title="Start a new regatta">New</button>
+    </div>
+  </header>
+
+  <main id="main">
+    <!-- ============ WELCOME / NO REGATTA ============ -->
+    <section class="view" id="view-welcome">
+      <div class="welcome card">
+        <h2>Score a regatta the easy way</h2>
+        <p>
+          Set up a regatta with the minimum details, add your boats, then tap finishers
+          in the order they cross the line. Scoring follows the
+          <strong>US Sailing Racing Rules of Sailing (2025–2028), Appendix A — Low Point System</strong>,
+          including penalty scores, discards, and Appendix A8 tie-breaking.
+        </p>
+        <div class="welcome-actions">
+          <button class="btn primary big" id="btnCreate">Create a Regatta</button>
+          <button class="btn ghost big" id="btnSample">Load Sample Data</button>
+        </div>
+        <p class="hint">Everything is stored privately in your browser. Use <em>Export</em> to back up or move data.</p>
+      </div>
+    </section>
+
+    <!-- ============ SETUP ============ -->
+    <section class="view" id="view-setup" hidden>
+      <div class="card">
+        <h2>Regatta Setup</h2>
+        <form id="setupForm" class="form-grid">
+          <label class="field span2">
+            <span>Regatta name <em class="req">*</em></span>
+            <input type="text" id="f-name" required placeholder="e.g. Spring Series 2026" />
+          </label>
+          <label class="field">
+            <span>Organizing authority / club</span>
+            <input type="text" id="f-organizer" placeholder="e.g. Bay Yacht Club" />
+          </label>
+          <label class="field">
+            <span>Venue</span>
+            <input type="text" id="f-venue" placeholder="e.g. San Francisco Bay" />
+          </label>
+          <label class="field">
+            <span>Start date</span>
+            <input type="date" id="f-start" />
+          </label>
+          <label class="field">
+            <span>End date</span>
+            <input type="date" id="f-end" />
+          </label>
+
+          <fieldset class="field span2">
+            <legend>Scoring</legend>
+            <div class="inline-row">
+              <label class="inline">
+                <span>System</span>
+                <select id="f-system">
+                  <option value="low-point">Low Point (RRS Appendix A4)</option>
+                </select>
+              </label>
+            </div>
+            <p class="hint">
+              Penalty codes (DNC, DNS, OCS, DNF, RET, DSQ, BFD, UFD) score
+              <strong>(boats entered) + 1</strong>. DNE scores the same but cannot be discarded.
+            </p>
+          </fieldset>
+
+          <fieldset class="field span2">
+            <legend>Discards (throwouts) — RRS A2</legend>
+            <p class="hint">
+              Define how many worst race scores each boat may drop as the series grows.
+              Leave at 0 for no discards.
+            </p>
+            <table class="mini-table" id="discardTable">
+              <thead>
+                <tr><th>When races completed ≥</th><th>Number of discards</th><th></th></tr>
+              </thead>
+              <tbody id="discardRows"></tbody>
+            </table>
+            <button type="button" class="btn ghost small" id="btnAddDiscard">+ Add discard rule</button>
+          </fieldset>
+
+          <fieldset class="field span2">
+            <legend>Fleets / Divisions (optional)</legend>
+            <p class="hint">Add fleets to score classes separately. Leave empty for a single combined fleet.</p>
+            <div id="fleetChips" class="chips"></div>
+            <div class="inline-row">
+              <input type="text" id="f-fleet-new" placeholder="e.g. PHRF A" />
+              <button type="button" class="btn ghost small" id="btnAddFleet">+ Add fleet</button>
+            </div>
+          </fieldset>
+
+          <div class="form-actions span2">
+            <button type="submit" class="btn primary">Save Setup</button>
+            <span class="save-note" id="setupSaved"></span>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <!-- ============ BOATS ============ -->
+    <section class="view" id="view-boats" hidden>
+      <div class="card">
+        <div class="card-head">
+          <h2>Boats / Competitors</h2>
+          <span class="count-pill" id="boatCount">0 boats</span>
+        </div>
+        <form id="boatForm" class="boat-form">
+          <input type="text" id="b-sail" placeholder="Sail #" class="w-sail" />
+          <input type="text" id="b-name" placeholder="Boat name" class="w-name" />
+          <input type="text" id="b-skipper" placeholder="Skipper / helm" class="w-skipper" />
+          <input type="text" id="b-class" placeholder="Class (optional)" class="w-class" />
+          <select id="b-fleet" class="w-fleet"></select>
+          <input type="number" step="any" id="b-rating" placeholder="Rating (opt)" class="w-rating" title="Optional handicap/rating, for your reference" />
+          <button type="submit" class="btn primary">Add</button>
+        </form>
+        <div class="table-wrap">
+          <table class="data-table" id="boatTable">
+            <thead>
+              <tr>
+                <th>Sail #</th><th>Boat</th><th>Skipper</th><th>Class</th><th>Fleet</th><th>Rating</th><th></th>
+              </tr>
+            </thead>
+            <tbody id="boatRows"></tbody>
+          </table>
+        </div>
+        <p class="empty-note" id="boatEmpty">No boats yet. Add competitors above.</p>
+      </div>
+    </section>
+
+    <!-- ============ RACES ============ -->
+    <section class="view" id="view-races" hidden>
+      <!-- Race list -->
+      <div id="raceListPane">
+        <div class="card">
+          <div class="card-head">
+            <h2>Races</h2>
+            <button class="btn primary" id="btnAddRace">+ New Race</button>
+          </div>
+          <div class="race-list" id="raceList"></div>
+          <p class="empty-note" id="raceEmpty">No races yet. Create your first race to start entering finishers.</p>
+        </div>
+      </div>
+
+      <!-- Race detail / scoring -->
+      <div id="raceDetailPane" hidden>
+        <div class="card">
+          <div class="card-head wrap">
+            <div>
+              <button class="btn ghost small" id="btnBackRaces">← All races</button>
+              <h2 id="raceTitle" class="inline-title">Race</h2>
+            </div>
+            <div class="race-meta-actions">
+              <select id="raceFleetFilter" class="w-fleet" title="Show boats in fleet"></select>
+              <button class="btn ghost small danger" id="btnDeleteRace">Delete race</button>
+            </div>
+          </div>
+
+          <div class="race-toolbar">
+            <div class="finish-instructions">
+              <strong>Tap a boat as it finishes.</strong> Boats are numbered in finishing order.
+              Use the code menu for OCS, DNF, DNS, DSQ, etc. Boats left blank when you close the race
+              are scored <span class="code-chip">DNC</span>.
+            </div>
+            <div class="toolbar-buttons">
+              <button class="btn ghost small" id="btnUndoFinish" title="Remove the last finisher">↶ Undo last finish</button>
+              <button class="btn ghost small" id="btnMarkDNC" title="Mark all un-entered boats as DNC">Mark remaining DNC</button>
+              <button class="btn ghost small" id="btnClearRace" title="Clear all entries for this race">Clear race</button>
+            </div>
+          </div>
+
+          <div class="race-columns">
+            <div class="race-col">
+              <h3>On the water <span class="muted" id="waterCount"></span></h3>
+              <div class="boat-pool" id="waterPool"></div>
+            </div>
+            <div class="race-col">
+              <h3>Finish order <span class="muted" id="finishCount"></span></h3>
+              <ol class="finish-list" id="finishList"></ol>
+              <h3 class="pen-head">Penalties &amp; codes <span class="muted" id="penCount"></span></h3>
+              <div class="pen-list" id="penList"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ RESULTS ============ -->
+    <section class="view" id="view-results" hidden>
+      <div class="card">
+        <div class="card-head wrap">
+          <div>
+            <h2 id="resultsTitle">Results</h2>
+            <p class="muted" id="resultsSub"></p>
+          </div>
+          <div class="results-actions">
+            <select id="resultsFleetSelect" class="w-fleet"></select>
+            <button class="btn ghost small" id="btnCSV">Download CSV</button>
+            <button class="btn ghost small" id="btnPrint">Print</button>
+          </div>
+        </div>
+        <div class="table-wrap" id="resultsWrap"></div>
+        <p class="legend" id="resultsLegend"></p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="app-footer">
+    <p>
+      Free Regatta Scoring · Scoring per the
+      <a href="https://www.ussailing.org/competition/rules-officiating/the-racing-rules-of-sailing-2025-2028/" target="_blank" rel="noopener">
+        US Sailing Racing Rules of Sailing 2025–2028</a>, Appendix A.
+      Always confirm final results against the official rules and your Sailing Instructions.
+    </p>
+  </footer>
+
+  <!-- Toast -->
+  <div id="toast" class="toast" hidden></div>
+
+  <script src="js/scoring.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
