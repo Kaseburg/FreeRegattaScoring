@@ -47,6 +47,11 @@
 
   // ---------- navigation ----------
   function showView(view) {
+    // Leaving Quick Entry: drop a started-but-empty race so it doesn't linger.
+    if (currentView === 'quick' && view !== 'quick' && currentRaceId) {
+      pruneEmptyRace(currentRaceId);
+      persist();
+    }
     currentView = view;
     $$('.view').forEach(function (v) { v.hidden = true; });
     const node = $('#view-' + view);
@@ -59,6 +64,7 @@
     if (view === 'races') renderRaces();
     if (view === 'results') renderResults();
     if (view === 'setup') renderSetup();
+    if (view === 'quick') renderQuick();
     window.scrollTo(0, 0);
   }
 
@@ -81,6 +87,11 @@
   // SETUP VIEW
   // =====================================================================
   function renderSetup() {
+    // Reflect whether this is initial setup or editing an in-progress regatta.
+    const inProgress = (regatta.races && regatta.races.length > 0) || (regatta.boats && regatta.boats.length > 0);
+    $('#setupHeading').textContent = inProgress ? 'Regatta Settings' : 'Regatta Setup';
+    $('#setupInProgress').hidden = !inProgress;
+
     $('#f-name').value = regatta.name || '';
     $('#f-organizer').value = regatta.organizer || '';
     $('#f-venue').value = regatta.venue || '';
@@ -203,7 +214,6 @@
         cellEditable(b, 'skipper'),
         cellEditable(b, 'boatClass'),
         el('td', {}, [fleetSelectFor(b)]),
-        cellEditable(b, 'rating'),
         el('td', {}, [el('button', {
           class: 'icon-btn danger', title: 'Remove boat',
           onclick: function () { removeBoat(b.id); }
@@ -255,10 +265,9 @@
         skipper: $('#b-skipper').value.trim(),
         boatClass: $('#b-class').value.trim(),
         fleetId: regatta.fleets.length ? ($('#b-fleet').value || regatta.fleets[0].id) : '',
-        rating: $('#b-rating').value.trim(),
       });
       persist();
-      ['#b-sail', '#b-name', '#b-skipper', '#b-class', '#b-rating'].forEach(function (s) { $(s).value = ''; });
+      ['#b-sail', '#b-name', '#b-skipper', '#b-class'].forEach(function (s) { $(s).value = ''; });
       $('#b-sail').focus();
       renderBoats();
     });
@@ -541,6 +550,218 @@
   }
 
   // =====================================================================
+  // QUICK ENTRY (Easy mode)
+  // =====================================================================
+  function startQuickEntry() {
+    if (!regatta) return;
+    currentRaceId = null;     // force a fresh race on entry
+    showView('quick');
+  }
+
+  function pruneEmptyRace(raceId) {
+    const r = regatta.races.find(function (x) { return x.id === raceId; });
+    if (r && (!r.results || !r.results.length)) {
+      regatta.races = regatta.races.filter(function (x) { return x.id !== raceId; });
+      return true;
+    }
+    return false;
+  }
+
+  function createQuickRace() {
+    const fleetId = regatta.fleets.length ? regatta.fleets[0].id : 'all';
+    const num = nextRaceNumber(fleetId);
+    const r = {
+      id: DB.uid('race'), number: num, name: 'Race ' + num, date: '',
+      fleetId: fleetId, completed: false, results: [],
+    };
+    regatta.races.push(r);
+    currentRaceId = r.id;
+    persist();
+    return r;
+  }
+
+  function renderQuick() {
+    let race = getRace();
+    if (!race) race = createQuickRace();
+
+    $('#quickTitle').textContent = 'Quick Entry — ' + (race.name || ('Race ' + race.number));
+
+    // fleet selector for this race
+    const ff = $('#quickFleet');
+    ff.innerHTML = '';
+    fleetOptions(true, race.fleetId).forEach(function (o) { ff.appendChild(o); });
+    ff.style.display = regatta.fleets.length ? '' : 'none';
+    ff.onchange = function (e) {
+      race.fleetId = e.target.value;
+      const allowed = {};
+      raceBoats(race).forEach(function (b) { allowed[b.id] = true; });
+      race.results = (race.results || []).filter(function (r) { return allowed[r.boatId]; });
+      renumberFinishers(race);
+      persist(); renderQuick();
+    };
+
+    // penalty code dropdown
+    const pc = $('#quickPenCode');
+    if (!pc.options.length) {
+      S.CODE_ORDER.forEach(function (code) {
+        if (code === 'RDG') return; // redress is entered in detailed view
+        pc.appendChild(el('option', { value: code }, [S.CODES[code].label + ' — ' + S.CODES[code].desc]));
+      });
+    }
+
+    const boats = raceBoats(race);
+
+    // finish order list
+    const finishers = (race.results || [])
+      .filter(function (r) { return r.code === 'FIN' && r.position != null; })
+      .sort(function (a, b) { return a.position - b.position; });
+    const fl = $('#quickFinishList');
+    fl.innerHTML = '';
+    finishers.forEach(function (r) {
+      const b = boats.find(function (x) { return x.id === r.boatId; });
+      if (!b) return;
+      fl.appendChild(el('li', { class: 'finish-item' }, [
+        el('span', { class: 'fi-pos' }, [String(r.position)]),
+        el('span', { class: 'fi-boat' }, [
+          el('strong', {}, [esc(b.sail) || '—']),
+          b.name ? el('span', { class: 'muted' }, [' ' + esc(b.name)]) : null,
+        ]),
+        el('span', { class: 'fi-ctrls' }, [
+          el('button', { class: 'icon-btn', title: 'Move up', onclick: function () { moveFinisher(race, r.boatId, -1); renderQuick(); } }, ['↑']),
+          el('button', { class: 'icon-btn', title: 'Move down', onclick: function () { moveFinisher(race, r.boatId, 1); renderQuick(); } }, ['↓']),
+          el('button', { class: 'icon-btn danger', title: 'Remove', onclick: function () { clearResult(race, r.boatId); renderQuick(); } }, ['✕']),
+        ]),
+      ]));
+    });
+    if (!finishers.length) fl.appendChild(el('li', { class: 'muted small no-bullet' }, ['No finishers yet — type a sail number above.']));
+    $('#quickCount').textContent = '(' + finishers.length + ')';
+
+    // penalty list
+    const penalized = (race.results || []).filter(function (r) { return r.code && r.code !== 'FIN'; });
+    const pl = $('#quickPenList');
+    pl.innerHTML = '';
+    penalized.forEach(function (r) {
+      const b = boats.find(function (x) { return x.id === r.boatId; });
+      if (!b) return;
+      const cinfo = S.CODES[r.code] || { label: r.code };
+      pl.appendChild(el('div', { class: 'pen-item' }, [
+        el('span', { class: 'code-chip' }, [cinfo.label]),
+        el('span', { class: 'pi-boat' }, [el('strong', {}, [esc(b.sail) || '—']), ' ', el('span', { class: 'muted' }, [esc(b.name) || ''])]),
+        el('span', { class: 'pi-ctrls' }, [
+          el('button', { class: 'icon-btn danger', title: 'Remove', onclick: function () { clearResult(race, r.boatId); renderQuick(); } }, ['✕']),
+        ]),
+      ]));
+    });
+
+    setTimeout(function () { const i = $('#quickSail'); if (i) i.focus(); }, 0);
+  }
+
+  // Find a boat by sail number within the race's fleet, creating it if needed.
+  function quickFindOrCreateBoat(race, sailRaw) {
+    const sail = sailRaw.trim();
+    if (!sail) return null;
+    const pool = raceBoats(race);
+    let boat = pool.find(function (b) {
+      return (b.sail || '').trim().toLowerCase() === sail.toLowerCase();
+    });
+    if (boat) return boat;
+    boat = {
+      id: DB.uid('boat'), sail: sail, name: '', skipper: '', boatClass: '',
+      fleetId: (race.fleetId && race.fleetId !== 'all') ? race.fleetId : '',
+    };
+    regatta.boats.push(boat);
+    return boat;
+  }
+
+  function quickAddFinisher(sailRaw) {
+    const race = getRace();
+    if (!race) return;
+    const boat = quickFindOrCreateBoat(race, sailRaw);
+    if (!boat) return;
+    const existing = resultFor(race, boat.id);
+    if (existing) {
+      toast('Sail ' + boat.sail + ' already recorded in this race');
+      return;
+    }
+    const maxPos = (race.results || []).reduce(function (m, r) {
+      return (r.code === 'FIN' && r.position != null) ? Math.max(m, r.position) : m;
+    }, 0);
+    race.results.push({ boatId: boat.id, code: 'FIN', position: maxPos + 1 });
+    persist(); renderQuick();
+  }
+
+  function quickAddCode(sailRaw, code) {
+    const race = getRace();
+    if (!race) return;
+    const boat = quickFindOrCreateBoat(race, sailRaw);
+    if (!boat) return;
+    setCode(race, boat.id, code); // setCode re-renders detail (hidden); follow with quick render
+    renderQuick();
+    toast('Sail ' + boat.sail + ' → ' + code);
+  }
+
+  function quickNextRace() {
+    const race = getRace();
+    if (!race) return;
+    if (!race.results || !race.results.length) {
+      toast('Enter at least one finisher before starting the next race');
+      return;
+    }
+    race.completed = true;
+    persist();
+    createQuickRace();
+    renderQuick();
+    toast('Race saved — entering ' + (getRace().name));
+  }
+
+  function quickScoreAndFinish() {
+    const race = getRace();
+    if (race) {
+      if (race.results && race.results.length) race.completed = true;
+      else pruneEmptyRace(race.id);
+      persist();
+    }
+    currentRaceId = null;
+    showView('results');
+  }
+
+  function quitQuick() {
+    const race = getRace();
+    if (race) pruneEmptyRace(race.id);
+    persist();
+    currentRaceId = null;
+    showView('races');
+  }
+
+  function initQuickHandlers() {
+    $('#btnQuickEntry').addEventListener('click', startQuickEntry);
+    $('#quickForm').addEventListener('submit', function (e) {
+      e.preventDefault();
+      const input = $('#quickSail');
+      quickAddFinisher(input.value);
+      input.value = '';
+      input.focus();
+    });
+    $('#btnQuickPen').addEventListener('click', function () {
+      const input = $('#quickPenSail');
+      const code = $('#quickPenCode').value;
+      if (!input.value.trim()) { toast('Enter a sail number'); return; }
+      quickAddCode(input.value, code);
+      input.value = '';
+    });
+    $('#quickPenSail').addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') { e.preventDefault(); $('#btnQuickPen').click(); }
+    });
+    $('#btnQuickUndo').addEventListener('click', function () {
+      const r = getRace(); if (r) { undoLastFinish(r); renderQuick(); }
+    });
+    $('#btnQuickNextRace').addEventListener('click', quickNextRace);
+    $('#btnQuickScore').addEventListener('click', quickScoreAndFinish);
+    $('#btnQuitQuick').addEventListener('click', quitQuick);
+    $('#btnQuickSettings').addEventListener('click', function () { showView('setup'); });
+  }
+
+  // =====================================================================
   // RESULTS VIEW
   // =====================================================================
   function resultsFleetList() {
@@ -574,6 +795,8 @@
     const data = S.scoreFleet(regatta, fleetId);
     const wrap = $('#resultsWrap');
     wrap.innerHTML = '';
+
+    renderAssumptions(data);
 
     if (!data.rows.length) {
       wrap.appendChild(el('p', { class: 'empty-note' }, ['No boats in this fleet yet.']));
@@ -634,6 +857,51 @@
       'Bracketed numbers are points; <span class="excluded-legend">struck-through</span> scores are discards (A2). ' +
       'Ties broken per A8.1 then A8.2. Codes: ' +
       S.CODE_ORDER.map(function (c) { return S.CODES[c].label; }).join(', ') + '.';
+  }
+
+  // Plain-English description of the discard (throwout) schedule.
+  function describeDiscards(schedule) {
+    const rules = (schedule || [])
+      .filter(function (r) { return (Number(r.discards) || 0) > 0; })
+      .sort(function (a, b) { return (Number(a.races) || 0) - (Number(b.races) || 0); });
+    if (!rules.length) return 'No throwouts — every race counts.';
+    return rules.map(function (r) {
+      const d = Number(r.discards) || 0;
+      const thr = Number(r.races) || 0;
+      const dn = d === 1 ? '1 throwout' : d + ' throwouts';
+      return dn + ' once ' + thr + ' or more races are completed';
+    }).join('; ') + '.';
+  }
+
+  function renderAssumptions(data) {
+    const box = $('#resultsAssumptions');
+    if (!box) return;
+    const inEffect = data.discardsAllowed === 1
+      ? 'Currently 1 throwout is being applied.'
+      : (data.discardsAllowed > 1
+          ? 'Currently ' + data.discardsAllowed + ' throwouts are being applied.'
+          : 'No throwout is being applied yet.');
+
+    const items = [
+      ['One-design fleet racing', 'all boats rated equal; finishing order is the score (no handicap correction).'],
+      ['Scoring system', 'Low Point System (RRS Appendix A4): 1st = 1 point, 2nd = 2, and so on.'],
+      ['Throwouts (discards)', describeDiscards(regatta.discardSchedule) + ' ' + inEffect],
+      ['Penalty / DNF scoring', 'DNC, DNS, OCS, DNF, RET, DSQ, etc. score (boats entered) + 1 = ' + (data.entries + 1) + ' points (DNE is never discarded).'],
+      ['Boats not entered in a race', 'scored DNC (' + (data.entries + 1) + ' points).'],
+      ['Tie-breaking', 'RRS A8.1 then A8.2 (best scores, then last-race-back).'],
+    ];
+
+    box.innerHTML = '';
+    box.appendChild(el('div', { class: 'assumptions-head' }, [
+      el('span', { class: 'assumptions-title' }, ['Scoring assumptions']),
+      regatta.easyMode ? el('span', { class: 'badge ok' }, ['Easy mode']) : null,
+      el('span', { class: 'muted small' }, ['— edit any of these on the Setup page']),
+    ]));
+    const ul = el('ul', { class: 'assumptions-list' });
+    items.forEach(function (it) {
+      ul.appendChild(el('li', {}, [el('strong', {}, [it[0] + ': ']), it[1]]));
+    });
+    box.appendChild(ul);
   }
 
   function formatPlace(cell) {
@@ -718,9 +986,22 @@
     toast('Sample regatta loaded');
   }
 
+  function startEasyRegatta() {
+    if (regatta && regatta.name && regatta.races.length &&
+        !confirm('Start a new pickup regatta? Your current regatta will be replaced. Export first if you want a backup.')) {
+      return;
+    }
+    regatta = DB.easyRegatta();
+    persist();
+    $('#topNav').hidden = false;
+    startQuickEntry();
+    toast('Pickup regatta started — just enter finishers!');
+  }
+
   function initTopHandlers() {
     $('#btnCreate').addEventListener('click', startNewRegatta);
     $('#btnSample').addEventListener('click', loadSample);
+    $('#btnEasy').addEventListener('click', startEasyRegatta);
 
     $$('.nav-btn').forEach(function (b) {
       b.addEventListener('click', function () { showView(b.dataset.view); });
@@ -749,6 +1030,7 @@
       startNewRegatta();
     });
 
+    $('#btnResultsSettings').addEventListener('click', function () { showView('setup'); });
     $('#btnCSV').addEventListener('click', downloadCSV);
     $('#btnPrint').addEventListener('click', function () { window.print(); });
   }
@@ -761,6 +1043,7 @@
     initSetupHandlers();
     initBoatHandlers();
     initRaceHandlers();
+    initQuickHandlers();
 
     regatta = DB.load();
     if (regatta) {

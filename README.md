@@ -1,30 +1,64 @@
 # ⛵ Free Regatta Scoring
 
-A simple but comprehensive web app for **creating and scoring sailing regattas**
-under the **US Sailing Racing Rules of Sailing (RRS) 2025–2028, Appendix A —
-Low Point System**.
+A simple but comprehensive web app for **creating and scoring one-design sailing
+regattas** under the **US Sailing Racing Rules of Sailing (RRS) 2025–2028,
+Appendix A — Low Point System**.
 
-Set up a regatta with the minimum necessary details, add your boats, then tap
-finishers **in the order they cross the line** (or mark OCS, DNF, DNS, DSQ, and
-other codes). Standings are calculated automatically with penalty scores,
-discards, and the Appendix A tie-break procedures.
+Built for **one-design fleet racing** — all boats are rated equal, so finishing
+order *is* the score (no handicap correction). Standings are calculated
+automatically with penalty scores, discards, and the Appendix A tie-break
+procedures.
 
 > No installation, no account, no server. It runs entirely in the browser and
 > stores your regatta privately in `localStorage`. Use **Export/Import** to back
 > up or move data between devices.
 
+## Two ways to score
+
+### ⚡ Easy — start scoring now (pickup regattas)
+
+One click starts a **pickup regatta** with the most common informal defaults, so
+there's nothing to set up. You just:
+
+1. Type a **sail number** and press <kbd>Enter</kbd> as each boat finishes.
+   New sail numbers are added automatically.
+2. Click **Save & Start Next Race** and do the same.
+3. Click **Finish & Score Regatta** at the end — done.
+
+The defaults Easy mode applies (all editable, and listed as **assumptions** on
+the results page):
+
+- **Low Point System** (RRS Appendix A4).
+- **One throwout (discard) once 4 or more races are completed.**
+- Penalty/DNF codes score **(boats entered) + 1**.
+- Boats not entered in a race are scored **DNC**.
+
+### Set Up a Regatta (full control)
+
+For scheduled events: enter name, venue, dates, optional fleets/divisions, and a
+custom discard schedule; manage the boat list; and use the detailed race screen
+(tap-to-finish columns, per-boat codes, redress points).
+
 ## Features
 
+- **Easy / Quick Entry** — score a whole regatta by typing sail numbers in
+  finishing order; auto-creates boats; auto-applies pickup-regatta defaults.
+- **Editable anytime** — once a regatta is in progress you can change its
+  settings (name, fleets, number of throwouts, etc.) from the **Settings** tab
+  or the ⚙ Settings button on the Quick Entry and Results pages; changes
+  re-score the standings immediately.
 - **Regatta setup** — name, organizing authority, venue, dates.
-- **Fleets / divisions** — optional; score classes separately or all together.
-- **Boats / competitors** — sail number, boat name, skipper, class, fleet,
-  optional rating. Inline editing.
-- **Fast finish entry** — tap boats in finishing order; reorder, undo, or assign
-  a scoring code. "Mark remaining DNC" closes out a race in one click.
+- **Fleets / divisions** — optional; score one-design classes separately or all
+  together.
+- **Boats / competitors** — sail number, boat name, skipper, class, fleet.
+  Inline editing.
+- **Detailed finish entry** — tap boats in finishing order; reorder, undo, or
+  assign a scoring code. "Mark remaining DNC" closes out a race in one click.
 - **Scoring codes (RRS A11)** — OCS, UFD, BFD, DNF, DNS, DNC, RET, DSQ, DNE,
   and RDG (manual redress points).
-- **Automatic results** — per-race scores, discards, totals, and ranking with
-  tie-breaks; printable and exportable to CSV.
+- **Automatic results** — scoring assumptions stated in plain English, per-race
+  scores, discards, totals, and ranking with tie-breaks; printable and
+  exportable to CSV.
 
 ## Scoring rules implemented (RRS 2025–2028, Appendix A)
 
