@@ -2,9 +2,14 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>Free Regatta Scoring — RRS 2025-2028</title>
   <meta name="description" content="Create and score sailing regattas using the US Sailing Racing Rules of Sailing (RRS 2025-2028) Low Point System." />
+  <meta name="theme-color" content="#0b2545" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Regatta Scoring" />
   <link rel="stylesheet" href="css/styles.css" />
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%E2%9B%B5%3C/text%3E%3C/svg%3E" />
 </head>
@@ -23,11 +28,14 @@
       <button class="nav-btn" data-view="races">Races</button>
       <button class="nav-btn" data-view="results">Results</button>
     </nav>
-    <div class="header-actions">
-      <button class="btn ghost" id="btnExport" title="Download a backup file">Export</button>
-      <button class="btn ghost" id="btnImport" title="Load a backup file">Import</button>
-      <input type="file" id="importFile" accept="application/json" hidden />
-      <button class="btn ghost danger" id="btnNew" title="Start a new regatta">New</button>
+    <div class="header-actions" id="headerActions">
+      <button class="btn ghost menu-toggle" id="btnMenu" aria-haspopup="true" aria-expanded="false" title="More actions">⋯ Menu</button>
+      <div class="header-menu" id="headerMenu">
+        <button class="btn ghost" id="btnExport" title="Download a backup file">Export</button>
+        <button class="btn ghost" id="btnImport" title="Load a backup file">Import</button>
+        <input type="file" id="importFile" accept="application/json" hidden />
+        <button class="btn ghost danger" id="btnNew" title="Start a new regatta">New</button>
+      </div>
     </div>
   </header>
 
@@ -296,6 +304,14 @@
       </div>
     </section>
   </main>
+
+  <!-- Bottom tab bar (mobile) — reuses .nav-btn/data-view wiring -->
+  <nav class="bottom-nav" id="bottomNav" hidden aria-label="Sections">
+    <button class="nav-btn tab-btn" data-view="boats"><span class="tab-ico">⛵</span><span class="tab-lbl">Boats</span></button>
+    <button class="nav-btn tab-btn" data-view="races"><span class="tab-ico">🏁</span><span class="tab-lbl">Races</span></button>
+    <button class="nav-btn tab-btn" data-view="results"><span class="tab-ico">🏆</span><span class="tab-lbl">Results</span></button>
+    <button class="nav-btn tab-btn" data-view="setup"><span class="tab-ico">⚙</span><span class="tab-lbl">Settings</span></button>
+  </nav>
 
   <footer class="app-footer">
     <p>

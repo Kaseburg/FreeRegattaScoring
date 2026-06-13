@@ -41,6 +41,10 @@ custom discard schedule; manage the boat list; and use the detailed race screen
 
 ## Features
 
+- **Phone-first** — the whole workflow (set up, enter finishers, score) runs on
+  a phone. A thumb-reachable bottom tab bar switches between Boats, Races,
+  Results, and Settings; the header's backup actions collapse into a menu; forms
+  stack full width and tables scroll with a pinned position column.
 - **Easy / Quick Entry** — score a whole regatta by typing sail numbers in
   finishing order; auto-creates boats; auto-applies pickup-regatta defaults.
 - **Editable anytime** — once a regatta is in progress you can change its
