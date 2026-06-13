@@ -169,7 +169,6 @@ legend { font-weight: 700; padding: 0 6px; font-size: .92rem; }
 .boat-form .w-skipper { flex: 1; min-width: 130px; }
 .boat-form .w-class { width: 130px; }
 .boat-form .w-fleet { width: 130px; }
-.boat-form .w-rating { width: 110px; }
 
 .table-wrap { overflow-x: auto; }
 .data-table { width: 100%; border-collapse: collapse; }
@@ -247,6 +246,39 @@ legend { font-weight: 700; padding: 0 6px; font-size: .92rem; }
 .code-select { padding: 5px 6px; font-size: .82rem; border-radius: 7px; }
 .rdg-pts { font-size: .8rem; color: var(--muted); display: inline-flex; align-items: center; gap: 4px; }
 .rdg-pts input { width: 66px; padding: 4px 6px; }
+
+/* ---------- quick entry (Easy mode) ---------- */
+.quick-card { max-width: 720px; margin-left: auto; margin-right: auto; }
+.quick-help { background: var(--sky); border-radius: 10px; padding: 12px 16px; font-size: .9rem; color: var(--navy-2); }
+.quick-help kbd {
+  background: #fff; border: 1px solid var(--line); border-bottom-width: 2px;
+  border-radius: 5px; padding: 1px 7px; font-size: .8rem; font-family: inherit;
+}
+.quick-form { display: flex; gap: 10px; margin: 16px 0 10px; }
+.quick-input {
+  flex: 1; font-size: 1.5rem; font-weight: 800; text-align: center;
+  letter-spacing: 1px; padding: 14px 16px;
+}
+.quick-input.narrow { font-size: 1rem; font-weight: 600; letter-spacing: 0; flex: 0 0 130px; text-align: left; }
+.quick-pen { margin: 6px 0 18px; }
+.quick-pen summary { cursor: pointer; color: var(--blue); font-size: .88rem; font-weight: 600; }
+.quick-pen-row { margin-top: 10px; }
+.quick-pen-row .code-select { min-width: 230px; }
+.quick-finish-head { display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid var(--line); padding-bottom: 6px; margin-bottom: 10px; }
+.quick-finish-head h3 { margin: 0; font-size: 1rem; }
+.quick-pen-list { display: flex; flex-direction: column; gap: 7px; margin-top: 10px; }
+.quick-actions { display: flex; gap: 12px; margin-top: 22px; flex-wrap: wrap; }
+.quick-actions .btn { flex: 1; min-width: 200px; text-align: center; }
+
+/* ---------- assumptions panel ---------- */
+.assumptions {
+  border: 1px solid var(--line); border-left: 4px solid var(--sea);
+  background: #f6fbfc; border-radius: 10px; padding: 14px 18px; margin-bottom: 18px;
+}
+.assumptions-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
+.assumptions-title { font-weight: 800; color: var(--navy); }
+.assumptions-list { margin: 0; padding-left: 20px; font-size: .88rem; color: var(--ink); }
+.assumptions-list li { margin: 3px 0; }
 
 /* ---------- results ---------- */
 .results-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }

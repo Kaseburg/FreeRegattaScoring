@@ -22,11 +22,25 @@
       endDate: '',
       scoringSystem: 'low-point',
       discardSchedule: [{ races: 0, discards: 0 }],
+      easyMode: false,     // true when created via the "Easy" pickup-regatta flow
       fleets: [],          // [{ id, name }]
-      boats: [],           // [{ id, sail, name, skipper, boatClass, fleetId, rating }]
+      boats: [],           // [{ id, sail, name, skipper, boatClass, fleetId }]
       races: [],           // [{ id, number, name, date, fleetId, completed, results:[{boatId, code, position, points}] }]
       createdAt: new Date().toISOString(),
     };
+  }
+
+  // "Easy" pickup-regatta defaults — the most common informal one-design setup.
+  // These are surfaced to the user as assumptions on the results page.
+  function easyRegatta() {
+    const reg = emptyRegatta();
+    const today = new Date().toISOString().slice(0, 10);
+    reg.name = 'Pickup Regatta — ' + today;
+    reg.startDate = today;
+    reg.easyMode = true;
+    // One throwout (discard) once 4 or more races have been completed.
+    reg.discardSchedule = [{ races: 0, discards: 0 }, { races: 4, discards: 1 }];
+    return reg;
   }
 
   function load() {
@@ -118,7 +132,7 @@
     reg.fleets = [fA, fB];
 
     const mk = function (sail, name, skipper, cls, fleetId) {
-      return { id: uid('boat'), sail: sail, name: name, skipper: skipper, boatClass: cls, fleetId: fleetId, rating: '' };
+      return { id: uid('boat'), sail: sail, name: name, skipper: skipper, boatClass: cls, fleetId: fleetId };
     };
     reg.boats = [
       mk('USA 11', 'Wind Dancer', 'A. Skipper', 'J/24', fA.id),
@@ -167,6 +181,7 @@
     KEY: KEY,
     uid: uid,
     emptyRegatta: emptyRegatta,
+    easyRegatta: easyRegatta,
     load: load,
     save: save,
     clear: clear,
