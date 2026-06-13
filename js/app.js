@@ -46,6 +46,25 @@
   function persist() { DB.save(regatta); }
 
   // ---------- navigation ----------
+  function setNavVisible(visible) {
+    $('#topNav').hidden = !visible;
+    $('#bottomNav').hidden = !visible;
+  }
+
+  function closeHeaderMenu() {
+    const ha = $('#headerActions');
+    if (ha) ha.classList.remove('open');
+    const t = $('#btnMenu');
+    if (t) t.setAttribute('aria-expanded', 'false');
+  }
+
+  function toggleHeaderMenu() {
+    const ha = $('#headerActions');
+    if (!ha) return;
+    const open = ha.classList.toggle('open');
+    $('#btnMenu').setAttribute('aria-expanded', open ? 'true' : 'false');
+  }
+
   function showView(view) {
     // Leaving Quick Entry: drop a started-but-empty race so it doesn't linger.
     if (currentView === 'quick' && view !== 'quick' && currentRaceId) {
@@ -59,7 +78,8 @@
     $$('.nav-btn').forEach(function (b) {
       b.classList.toggle('active', b.dataset.view === view);
     });
-    $('#topNav').hidden = !regatta;
+    setNavVisible(!!regatta);
+    closeHeaderMenu();
     if (view === 'boats') renderBoats();
     if (view === 'races') renderRaces();
     if (view === 'results') renderResults();
@@ -993,7 +1013,7 @@
     }
     regatta = DB.easyRegatta();
     persist();
-    $('#topNav').hidden = false;
+    setNavVisible(true);
     startQuickEntry();
     toast('Pickup regatta started — just enter finishers!');
   }
@@ -1007,11 +1027,22 @@
       b.addEventListener('click', function () { showView(b.dataset.view); });
     });
 
+    // Header overflow menu (collapses Export/Import/New on small screens)
+    $('#btnMenu').addEventListener('click', function (e) {
+      e.stopPropagation();
+      toggleHeaderMenu();
+    });
+    document.addEventListener('click', function (e) {
+      const ha = $('#headerActions');
+      if (ha && ha.classList.contains('open') && !ha.contains(e.target)) closeHeaderMenu();
+    });
+
     $('#btnExport').addEventListener('click', function () {
+      closeHeaderMenu();
       if (!regatta) { toast('Nothing to export yet'); return; }
       DB.exportFile(regatta);
     });
-    $('#btnImport').addEventListener('click', function () { $('#importFile').click(); });
+    $('#btnImport').addEventListener('click', function () { closeHeaderMenu(); $('#importFile').click(); });
     $('#importFile').addEventListener('change', function (e) {
       const file = e.target.files[0];
       if (!file) return;
@@ -1047,7 +1078,7 @@
 
     regatta = DB.load();
     if (regatta) {
-      $('#topNav').hidden = false;
+      setNavVisible(true);
       showView(regatta.name ? 'results' : 'setup');
     } else {
       showView('welcome');
